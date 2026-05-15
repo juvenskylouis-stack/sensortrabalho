@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoramento de Presença Magnética</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Estilos adicionais para os botões de teste manual */
+        .btn-container {
+            margin-top: 25px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn-teste {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            transition: opacity 0.2s;
+        }
+
+        .btn-teste:hover {
+            opacity: 0.9;
+        }
+
+        .btn-proximo {
+            background-color: #2ed573;
+        }
+
+        .btn-afastado {
+            background-color: #ff4757;
+        }
+
+        .divisor {
+            margin: 20px 0;
+            border: 0;
+            border-top: 1px solid #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Monitoramento do Sensor KY-003</h1>
+        
+        <div id="status-card" class="status-box">
+            AGUARDANDO CONEXÃO...
+        </div>
+
+        <p class="legenda">Os dados também estão sendo armazenados no MySQL.</p>
+
+        <hr class="divisor">
+
+        <!-- Painel de Teste Manual -->
+        <h3>Painel de Teste Manual</h3>
+        <div class="btn-container">
+            <button class="btn-teste btn-proximo" onclick="simularEnvio('PROXIMO')">Simular PRÓXIMO</button>
+            <button class="btn-teste btn-afastado" onclick="simularEnvio('AFASTADO')">Simular AFASTADO</button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const cardElemento = document.getElementById('status-card');
+
+        // Escuta a atualização do servidor (via Wi-Fi ou via Botão)
+        socket.on('atualizacao-sensor', (status) => {
+            if (status === "PROXIMO") {
+                cardElemento.innerText = "Objeto Próximo";
+                cardElemento.className = "status-box proximo";
+            } else if (status === "AFASTADO") {
+                cardElemento.innerText = "Objeto Afastado";
+                cardElemento.className = "status-box afastado";
+            }
+        });
+
+        // Função que os botões usam para disparar dados para o app.js
+        function simularEnvio(statusDestino) {
+            fetch('/sensor', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `status=${statusDestino}`
+            })
+            .then(resposta => {
+                if (!resposta.ok) console.error('Erro na simulação');
+            })
+            .catch(erro => console.error('Erro de rede:', erro));
+        }
+    </script>
+</body>
+</html>
