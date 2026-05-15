@@ -2,59 +2,219 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 1px;
 }
 
 body {
-    background-color: #f0f2f5;
+    background-color: #0a0a0c;
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+    overflow: hidden;
 }
 
+/* Container com efeito de Varredura (Scanline) e Glitch */
 .container {
-    background-color: #ffffff;
+    background-color: #121216;
     padding: 40px;
-    border-radius: 16px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    border: 2px solid #27272a;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(255, 255, 255, 0.02);
     text-align: center;
     width: 100%;
     max-width: 450px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Camada do efeito Scanline (Linhas de TV antiga/Terminal Sci-Fi) */
+.container::before {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+    z-index: 10;
+    background-size: 100% 4px, 6px 100%;
+    pointer-events: none;
+}
+
+/* Linha horizontal de varredura que cruza a tela */
+.container::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: rgba(226, 232, 240, 0.1);
+    animation: scanline-move 6s infinite linear;
+    z-index: 11;
+    pointer-events: none;
+}
+
+@keyframes scanline-move {
+    0% { top: -5%; }
+    100% { top: 105%; }
+}
+
+/* Estilização da imagem do sensor centralizada no topo */
+.sensor-img {
+    width: 80px;               
+    height: auto;              
+    margin-bottom: 15px;       
+    filter: grayscale(100%) opacity(0.8); 
+    transition: all 0.3s ease-in-out; 
+    pointer-events: none;      
+    position: relative;
+    z-index: 12;
 }
 
 h1 {
-    color: #333333;
-    font-size: 24px;
-    margin-bottom: 30px;
+    color: #e2e8f0;
+    font-size: 18px;
+    margin-bottom: 25px;
+    text-transform: uppercase;
+    text-shadow: 0 0 5px rgba(226, 232, 240, 0.3);
 }
 
+h3 {
+    color: #71717a;
+    font-size: 12px;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+}
+
+/* Caixa de exibição de Status principal */
 .status-box {
     padding: 30px;
-    border-radius: 12px;
-    font-size: 28px;
+    border-radius: 8px;
+    font-size: 20px;
     font-weight: bold;
-    color: #ffffff;
-    background-color: #718096;
-    transition: all 0.4s ease;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    color: #52525b;
+    background-color: #18181b;
+    border: 1px solid #27272a;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    z-index: 12;
 }
 
-/* Classes dinâmicas para alteração visual baseada no sensor */
+/* Estados de proximidade magnética */
 .proximo {
-    background-color: #2ed573;
-    transform: scale(1.02);
-    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    color: #ffffff;
+    background-color: #3f3f46;
+    border-color: #52525b;
 }
 
 .afastado {
-    background-color: #ff4757;
-    transform: scale(1);
+    color: #3f3f46;
+    background-color: #09090b;
+    border-color: #18181b;
+}
+
+/* Brilho Platinado Pulsante Avançado */
+.sensor-active {
+    box-shadow: 0 0 20px rgba(226, 232, 240, 0.25), inset 0 0 15px rgba(226, 232, 240, 0.1);
+    border: 1px solid #a1a1aa;
+    animation: tech-pulse 1.5s infinite ease-in-out, glitch-blink 0.3s steps(2) infinite;
+}
+
+/* Faz a imagem brilhar em sincronia quando a classe sensor-active é aplicada */
+.sensor-active ~ .sensor-img {
+    filter: grayscale(0%) opacity(1) drop-shadow(0 0 8px rgba(226, 232, 240, 0.6));
+}
+
+@keyframes tech-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+@keyframes glitch-blink {
+    0% { opacity: 0.95; }
+    50% { opacity: 1; }
+    100% { opacity: 0.98; }
+}
+
+/* Painel do Contador Digital Sci-Fi */
+.contador-container {
+    margin: 25px 0;
+    padding: 15px;
+    background-color: #09090b;
+    border: 1px solid #27272a;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    position: relative;
+    z-index: 12;
+}
+
+.contador-label {
+    font-size: 10px;
+    color: #a1a1aa;
+    text-transform: uppercase;
+}
+
+.contador-digital {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 36px;
+    color: #e2e8f0;
+    background: #141416;
+    padding: 2px 16px;
+    border-radius: 4px;
+    border: 1px solid #1f1f23;
+    letter-spacing: 4px;
+    text-shadow: 0 0 10px rgba(226, 232, 240, 0.5);
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
 }
 
 .legenda {
-    margin-top: 25px;
-    font-size: 14px;
-    color: #7f8c8d;
+    margin-top: 20px;
+    font-size: 10px;
+    color: #4b5563;
+    text-transform: uppercase;
+    position: relative;
+    z-index: 12;
 }
 
+.divisor {
+    margin: 20px 0;
+    border: 0;
+    border-top: 1px solid #27272a;
+    position: relative;
+    z-index: 12;
+}
+
+/* Botões do Simulador Técnico */
+.btn-container {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    position: relative;
+    z-index: 12;
+}
+
+.btn-teste {
+    padding: 10px 16px;
+    border: 1px solid #27272a;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
+    font-family: 'Orbitron', sans-serif;
+    cursor: pointer;
+    color: #a1a1aa;
+    background-color: #18181b;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+}
+
+.btn-teste:hover {
+    background-color: #27272a;
+    color: #ffffff;
+    border-color: #52525b;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.05);
+}

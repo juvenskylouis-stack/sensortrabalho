@@ -5,95 +5,79 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monitoramento de Presença Magnética</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        /* Estilos adicionais para os botões de teste manual */
-        .btn-container {
-            margin-top: 25px;
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-        }
-
-        .btn-teste {
-            padding: 10px 15px;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            color: white;
-            transition: opacity 0.2s;
-        }
-
-        .btn-teste:hover {
-            opacity: 0.9;
-        }
-
-        .btn-proximo {
-            background-color: #2ed573;
-        }
-
-        .btn-afastado {
-            background-color: #ff4757;
-        }
-
-        .divisor {
-            margin: 20px 0;
-            border: 0;
-            border-top: 1px solid #e0e0e0;
-        }
-    </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Monitoramento do Sensor KY-003</h1>
+        <!-- Imagem do sensor/logotipo centralizada no topo -->
+        <img src="sensor-icon.png.jpg" alt="Sensor KY-003" class="sensor-img">
+
+        <h1>TELEMETRIA MAGNÉTICA</h1>
         
+        <!-- Bloco de Status Principal -->
         <div id="status-card" class="status-box">
-            AGUARDANDO CONEXÃO...
+            SISTEMA OFFLINE
         </div>
 
-        <p class="legenda">Os dados também estão sendo armazenados no MySQL.</p>
+        <!-- Painel do Contador estilo Relógio Sci-Fi -->
+        <div class="contador-container">
+            <span class="contador-label">Total de Acionamentos</span>
+            <div id="display-contador" class="contador-digital">0000</div>
+        </div>
+
+        <p class="legenda">LOG CENTRAL: BANCO DE DADOS MYSQL</p>
 
         <hr class="divisor">
 
         <!-- Painel de Teste Manual -->
-        <h3>Painel de Teste Manual</h3>
+        <h3>Simulador de Campo</h3>
         <div class="btn-container">
-            <button class="btn-teste btn-proximo" onclick="simularEnvio('PROXIMO')">Simular PRÓXIMO</button>
-            <button class="btn-teste btn-afastado" onclick="simularEnvio('AFASTADO')">Simular AFASTADO</button>
+            <button class="btn-teste" onclick="simularEnvio('PROXIMO')">Captar Ímã</button>
+            <button class="btn-teste" onclick="simularEnvio('AFASTADO')">Afastar Ímã</button>
         </div>
     </div>
 
+    <!-- Conexão de Comunicação em Tempo Real -->
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
         const cardElemento = document.getElementById('status-card');
+        const contadorElemento = document.getElementById('display-contador');
+        
+        let totalDeteccoes = 0;
+        let jaContou = false; // Flag para garantir contagem apenas na transição de aproximação
 
-        // Escuta a atualização do servidor (via Wi-Fi ou via Botão)
+        // Escuta atualizações do servidor Node.js (via sensor físico ou simulação)
         socket.on('atualizacao-sensor', (status) => {
             if (status === "PROXIMO") {
-                cardElemento.innerText = "Objeto Próximo";
-                cardElemento.className = "status-box proximo";
+                cardElemento.innerText = "CAMPO: DETECTADO";
+                cardElemento.className = "status-box proximo sensor-active";
+                
+                // Incrementa o contador apenas no momento exato em que o ímã chega perto
+                if (!jaContou) {
+                    totalDeteccoes++;
+                    atualizarDisplayDigital(totalDeteccoes);
+                    jaContou = true;
+                }
             } else if (status === "AFASTADO") {
-                cardElemento.innerText = "Objeto Afastado";
+                cardElemento.innerText = "CAMPO: AUSENTE";
                 cardElemento.className = "status-box afastado";
+                jaContou = false; // Reseta o gatilho para permitir nova contagem ao se reaproximar
             }
         });
 
-        // Função que os botões usam para disparar dados para o app.js
+        // Formata o número para padrão sci-fi de 4 dígitos (ex: de 5 para "0005")
+        function atualizarDisplayDigital(numero) {
+            contadorElemento.innerText = String(numero).padStart(4, '0');
+        }
+
+        // Envia comando HTTP POST simulação para o servidor Node.js
         function simularEnvio(statusDestino) {
             fetch('/sensor', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: `status=${statusDestino}`
-            })
-            .then(resposta => {
-                if (!resposta.ok) console.error('Erro na simulação');
-            })
-            .catch(erro => console.error('Erro de rede:', erro));
+            }).catch(erro => console.error('Erro de barramento elétrico:', erro));
         }
     </script>
 </body>
