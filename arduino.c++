@@ -1,62 +1,65 @@
-#include <WiFi.h> // Se usar ESP8266, mude para: #include <ESP8266WiFi.h>
-#include <HTTPClient.h> // Se usar ESP8266, mude para: #include <ESP8266HTTPClient.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
 
-// Configurações do seu Wi-Fi
 const char* ssid = "NOME_DA_SUA_REDE_WIFI";
 const char* password = "SENHA_DO_SUA_REDE_WIFI";
-
-// IP do computador onde o Node.js está rodando (Ex: 192.168.1.50)
-// Não use "localhost" aqui, deve ser o IP real do PC na rede local
 const char* serverUrl = "http://IP_DO_SEU_COMPUTADOR:3000/sensor";
 
-const int sensorPin = 2; 
-int ultimoEstado = -1;
+const int sensorPin = 4;
+int estadoAnterior = HIGH; // Começa em HIGH (considerando pull-up ou sem objeto)
 
 void setup() {
   Serial.begin(115200);
-  pinMode(sensorPin, INPUT);
+  pinMode(sensorPin, INPUT); // Altere para INPUT_PULLUP se o sensor chavear no GND
 
-  // Conectando ao Wi-Fi
   WiFi.begin(ssid, password);
   Serial.print("Conectando ao Wi-Fi");
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-  Serial.println("\nConectado com sucesso!");
-  Serial.print("IP do ESP: ");
-  Serial.println(WiFi.localIP());
+  Serial.println("\nConectado!");
 }
 
 void loop() {
-  int valorSensor = digitalRead(sensorPin);
+  int estadoAtual = digitalRead(sensorPin);
 
-  // Envia apenas quando o status muda (evita sobrecarregar a rede e o banco)
-  if (valorSensor != ultimoEstado) {
-    String statusEnvio = (valorSensor == LOW) ? "PROXIMO" : "AFASTADO";
+  // Detecta o momento exato da transição (Objeto acabou de entrar na frente do sensor)
+  // Se seu sensor ativa em HIGH, mude para: (estadoAtual == HIGH && estadoAnterior == LOW)
+  if (estadoAtual == LOW && estadoAnterior == HIGH) {
+   
+    // Filtro anti-ruído rápido (debouncing)
+    delay(40);
+    if (digitalRead(sensorPin) == LOW) {
+     
+      Serial.println("Passagem detectada! Enviando ao banco...");
 
-    if (WiFi.status() == WL_CONNECTED) {
-      HTTPClient http;
-      http.begin(serverUrl);
-      http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+      if (WiFi.status() == WL_CONNECTED) {
+        HTTPClient http;
+        http.begin(serverUrl);
+        http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+        http.addHeader("Connection", "close");
 
-      // Monta o corpo da requisição: status=PROXIMO ou status=AFASTADO
-      String dadosPost = "status=" + statusEnvio;
-      int httpResponseCode = http.POST(dadosPost);
+        // Envia uma string de evento ou timestamp para registrar a passagem
+        String dadosPost = "evento=PASSAGEM";
+        int httpResponseCode = http.POST(dadosPost);
 
-      if (httpResponseCode > 0) {
-        Serial.println("Dados enviados via Wi-Fi: " + statusEnvio);
+        if (httpResponseCode > 0) {
+          Serial.println("Passagem registrada com sucesso no servidor.");
+        } else {
+          Serial.print("Erro ao enviar passagem: ");
+          Serial.println(httpResponseCode);
+        }
+        http.end();
       } else {
-        Serial.print("Erro no envio HTTP: ");
-        Serial.println(httpResponseCode);
+        Serial.println("Erro: Wi-Fi desconectado.");
       }
-      http.end();
-    } else {
-      Serial.println("Erro: Wi-Fi desconectado.");
     }
-    
-    ultimoEstado = valorSensor;
   }
-  
-  delay(200); 
+
+  // Atualiza o estado anterior para a próxima leitura do loop
+  estadoAnterior = estadoAtual;
+ 
+  // Pequena pausa para estabilidade do processador
+  delay(1000);
 }
